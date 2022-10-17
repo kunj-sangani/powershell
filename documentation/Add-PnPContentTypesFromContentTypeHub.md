@@ -25,6 +25,8 @@ Add-PnPContentTypesFromContentTypeHub -ContentTypes List<String> [-Site <SitePip
 
 ## DESCRIPTION
 
+Allows to add content types from content type hub site to current site. In case the same content type is already present on the current site then the latest published version will be used.
+
 ## EXAMPLES
 
 ### EXAMPLE 1
@@ -33,6 +35,9 @@ Add-PnPContentTypesFromContentTypeHub -ContentTypes List<String> [-Site <SitePip
 ```
 
 This will add the content types with the ids '0x0101' and '0x01' to the current site. Latest published version of these content types will be synced if they were already present in the current site.
+
+- There's an issue with this cmdlet if you use it on private channel sites. The workaround for that is to execute the below command:
+  - `Enable-PnPFeature -Identity 73ef14b1-13a9-416b-a9b5-ececa2b0604c -Scope Site -Force`
 
 ### EXAMPLE 2
 ```powershell

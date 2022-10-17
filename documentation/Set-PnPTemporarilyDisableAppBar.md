@@ -7,7 +7,7 @@ external help file: PnP.PowerShell.dll-Help.xml
 online version: https://pnp.github.io/powershell/cmdlets/Set-PnPTemporarilyDisableAppBar.html
 ---
  
-# Set-PnPHomeSite
+# Set-PnPTemporarilyDisableAppBar
 
 ## SYNOPSIS
 
@@ -15,15 +15,17 @@ online version: https://pnp.github.io/powershell/cmdlets/Set-PnPTemporarilyDisab
 
 * SharePoint: Access to the SharePoint Tenant Administration site
 
-Allows the SharePoint Online App Bar to be disabled. It may take some time for the change to be reflected in SharePoint Online. Support for this may be dropped after October 31st, 2021 after which the SharePoint Online App Bar will become visible anyway. See [https://admin.microsoft.com/#/MessageCenter/:/messages/MC240066] for more information.
+Allows the SharePoint Online App Bar to be disabled. It may take some time for the change to be reflected in SharePoint Online. Support for this may be dropped after March 31st, 2023 after which the SharePoint Online App Bar will become visible anyway. See the [Message Center Announcement](https://admin.microsoft.com/Adminportal/Home#/MessageCenter/:/messages/MC428505) on this for more information.
 
 ## SYNTAX
 
 ```powershell
-Set-PnPTemporarilyDisableAppBar <Boolean> [<CommonParameters>]
+Set-PnPTemporarilyDisableAppBar -Enabled <Boolean> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
+
+Allows to disable/enable SharePoint Online App Bar.
 
 ## EXAMPLES
 
@@ -44,7 +46,7 @@ Shows the SharePoint Online App Bar.
 ## PARAMETERS
 
 ### -Enable
-The url of the site to set as the home site
+Specifies whether to show or hide SharePoint Online App Bar.
 
 ```yaml
 Type: Boolean

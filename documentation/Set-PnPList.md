@@ -20,11 +20,13 @@ Set-PnPList -Identity <ListPipeBind> [-EnableContentTypes <Boolean>] [-BreakRole
  [-Hidden <Boolean>] [-ForceCheckout <Boolean>] [-ListExperience <ListExperience>]
  [-EnableAttachments <Boolean>] [-EnableFolderCreation <Boolean>] [-EnableVersioning <Boolean>]
  [-EnableMinorVersions <Boolean>] [-MajorVersions <UInt32>] [-MinorVersions <UInt32>]
- [-EnableModeration <Boolean>] [-ReadSecurity <ListReadSecurity>] [-WriteSecurity <ListWriteSecurity>]
- [-NoCrawl] [-Connection <PnPConnection>] [<CommonParameters>]
+ [-EnableModeration <Boolean>] [-DraftVersionVisibility <DraftVisibilityType>] [-ReadSecurity <ListReadSecurity>] [-WriteSecurity <ListWriteSecurity>]
+ [-NoCrawl] [-ExemptFromBlockDownloadOfNonViewableFiles <Boolean>] [-DisableGridEditing <Boolean>] 
+ [-Path <String>] [-Connection <PnPConnection>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
+Allows the configuration of a specific SharePoint Online list to be set.
 
 ## EXAMPLES
 
@@ -70,10 +72,31 @@ Set-PnPList -Identity "Demo List" -EnableAttachments $true
 
 Turns on attachments on a list
 
+### EXAMPLE 7
+```powershell
+Set-PnPList -Identity "Demo List" -Title "Demo List 2" -Path "Lists/DemoList2"
+```
+
+Rename a list, including its' URL.
+
 ## PARAMETERS
 
 ### -BreakRoleInheritance
-If used the security inheritance is broken for this list
+If used the security inheritance is broken for this list from its parent, the web in which it resides. Permissions can be added using [Set-PnPListPermission](Set-PnPListPermission.html).
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ResetRoleInheritance
+If used the security inheritance is reset for this list meaning it will not copy the permissions from its parent, but will start with an empty list of permissions. Permissions can be added using [Set-PnPListPermission](Set-PnPListPermission.html).
 
 ```yaml
 Type: SwitchParameter
@@ -212,6 +235,20 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -DraftVersionVisibility
+Specify which users should be able to view drafts in this list.
+
+```yaml
+Type: DraftVisibilityType
+Parameter Sets: (All)
+Accepted values: Approver, Author, Reader
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -EnableVersioning
 Enable or disable versioning. Set to $true to enable, $false to disable.
 
@@ -298,7 +335,7 @@ Accept wildcard characters: False
 ```
 
 ### -MinorVersions
-Maximum minor versions to keep
+Maximum major versions for which to keep minor versions
 
 ```yaml
 Type: UInt32
@@ -310,21 +347,6 @@ Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
-
-### -ResetRoleInheritance
-If used the security inheritance is reset for this list (inherited from parent)
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 
 ### -ReadSecurity
 Sets the read security for the list
@@ -382,9 +404,48 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -ExemptFromBlockDownloadOfNonViewableFiles
+Allows to configure access capabilities for unmanaged devices for the list. If set to $true, the list will be accessible by unmanaged devices as well. For more information, see [SharePoint and OneDrive unmanaged device access controls for administrators](https://docs.microsoft.com/sharepoint/control-access-from-unmanaged-devices).
 
+```yaml
+Type: Boolean
+Parameter Sets: (All)
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -DisableGridEditing
+Enable or disable whether edit grid editing is enabled for the list. Set to $true to disable, $false to enable.
+
+```yaml
+Type: Boolean
+Parameter Sets: (All)
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Path
+The new URL path of the list. The parent folder must exist and be in the same site/web. I.e. lists\newname.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
 
 ## RELATED LINKS
 
 [Microsoft 365 Patterns and Practices](https://aka.ms/m365pnp)
-

@@ -4,10 +4,12 @@ using Microsoft.SharePoint.Client;
 using PnP.Framework.Entities;
 using PnP.PowerShell.Commands.Base.PipeBinds;
 using System.Collections.Generic;
+using Microsoft.SharePoint.Client.Taxonomy;
 
 namespace PnP.PowerShell.Commands.Fields
 {
     [Cmdlet(VerbsCommon.Add, "PnPField", DefaultParameterSetName = "Add field to list")]
+    [OutputType(typeof(Field))]
     public class AddField : PnPWebCmdlet, IDynamicParameters
     {
         const string ParameterSet_ADDFIELDTOLIST = "Add field to list";
@@ -120,6 +122,7 @@ namespace PnP.PowerShell.Commands.Fields
                     }
                     if (Type == FieldType.Choice || Type == FieldType.MultiChoice)
                     {
+                        EnsureDynamicParameters(choiceFieldParameters);
                         f = list.CreateField<FieldChoice>(fieldCI);
                         ((FieldChoice)f).Choices = choiceFieldParameters.Choices;
                         f.Update();
@@ -127,6 +130,8 @@ namespace PnP.PowerShell.Commands.Fields
                     }
                     else if (Type == FieldType.Calculated)
                     {
+                        EnsureDynamicParameters(calculatedFieldParameters);
+
                         // Either set the ResultType as input parameter or set it to the default Text
                         if (!string.IsNullOrEmpty(calculatedFieldParameters.ResultType))
                         {
@@ -229,6 +234,7 @@ namespace PnP.PowerShell.Commands.Fields
 
                 if (Type == FieldType.Choice || Type == FieldType.MultiChoice)
                 {
+                    EnsureDynamicParameters(choiceFieldParameters);
                     f = CurrentWeb.CreateField<FieldChoice>(fieldCI);
                     ((FieldChoice)f).Choices = choiceFieldParameters.Choices;
                     f.Update();
@@ -236,6 +242,7 @@ namespace PnP.PowerShell.Commands.Fields
                 }
                 else if (Type == FieldType.Calculated)
                 {
+                    EnsureDynamicParameters(calculatedFieldParameters);
                     f = CurrentWeb.CreateField<FieldCalculated>(fieldCI);
                     ((FieldCalculated)f).Formula = calculatedFieldParameters.Formula;
                     f.Update();
@@ -318,12 +325,29 @@ namespace PnP.PowerShell.Commands.Fields
                             WriteObject(ClientContext.CastTo<FieldNumber>(f));
                             break;
                         }
+                    case FieldType.Invalid:
+                        {
+                            if (f.TypeAsString.StartsWith("TaxonomyFieldType"))
+                            {
+                                WriteObject(ClientContext.CastTo<TaxonomyField>(f));
+                                break;
+                            }
+                            goto default;
+                        }
                     default:
                         {
                             WriteObject(f);
                             break;
                         }
                 }
+            }
+        }
+
+        private void EnsureDynamicParameters(object dynamicParameters)
+        {
+            if (dynamicParameters == null)
+            {
+                throw new PSArgumentException($"Please specify the parameter -{nameof(Type)} when invoking this cmdlet", nameof(Type));
             }
         }
 

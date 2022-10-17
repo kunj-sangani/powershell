@@ -37,7 +37,6 @@ namespace PnP.PowerShell.Commands.Base
         private const string SPOManagementClientId = "9bc3ab49-b65d-410a-85ad-de819febfddc";
         private const string SPOManagementRedirectUri = "https://oauth.spops.microsoft.com/";
 
-
         [Parameter(Mandatory = false, ParameterSetName = ParameterSet_CREDENTIALS, ValueFromPipeline = true)]
         [Parameter(Mandatory = false, ParameterSetName = ParameterSet_ACSAPPONLY, ValueFromPipeline = true)]
         [Parameter(Mandatory = false, ParameterSetName = ParameterSet_APPONLYAADCERTIFICATE, ValueFromPipeline = true)]
@@ -49,6 +48,17 @@ namespace PnP.PowerShell.Commands.Base
         [Parameter(Mandatory = false, ParameterSetName = ParameterSet_ACCESSTOKEN, ValueFromPipeline = true)]
         public SwitchParameter ReturnConnection;
 
+        [Parameter(Mandatory = false, ParameterSetName = ParameterSet_CREDENTIALS, ValueFromPipeline = true)]
+        [Parameter(Mandatory = false, ParameterSetName = ParameterSet_ACSAPPONLY, ValueFromPipeline = true)]
+        [Parameter(Mandatory = false, ParameterSetName = ParameterSet_APPONLYAADCERTIFICATE, ValueFromPipeline = true)]
+        [Parameter(Mandatory = false, ParameterSetName = ParameterSet_APPONLYAADTHUMBPRINT, ValueFromPipeline = true)]
+        [Parameter(Mandatory = false, ParameterSetName = ParameterSet_SPOMANAGEMENT, ValueFromPipeline = true)]
+        [Parameter(Mandatory = false, ParameterSetName = ParameterSet_DEVICELOGIN, ValueFromPipeline = true)]
+        [Parameter(Mandatory = false, ParameterSetName = ParameterSet_WEBLOGIN, ValueFromPipeline = true)]
+        [Parameter(Mandatory = false, ParameterSetName = ParameterSet_INTERACTIVE, ValueFromPipeline = true)]
+        [Parameter(Mandatory = false, ParameterSetName = ParameterSet_ACCESSTOKEN, ValueFromPipeline = true)]
+        public SwitchParameter ValidateConnection;        
+
         [Parameter(Mandatory = true, Position = 0, ParameterSetName = ParameterSet_CREDENTIALS, ValueFromPipeline = true)]
         [Parameter(Mandatory = true, Position = 0, ParameterSetName = ParameterSet_ACSAPPONLY, ValueFromPipeline = true)]
         [Parameter(Mandatory = true, Position = 0, ParameterSetName = ParameterSet_APPONLYAADCERTIFICATE, ValueFromPipeline = true)]
@@ -58,6 +68,7 @@ namespace PnP.PowerShell.Commands.Base
         [Parameter(Mandatory = true, Position = 0, ParameterSetName = ParameterSet_DEVICELOGIN, ValueFromPipeline = true)]
         [Parameter(Mandatory = true, Position = 0, ParameterSetName = ParameterSet_WEBLOGIN, ValueFromPipeline = true)]
         [Parameter(Mandatory = true, Position = 0, ParameterSetName = ParameterSet_INTERACTIVE, ValueFromPipeline = true)]
+        [Parameter(Mandatory = true, Position = 0, ParameterSetName = ParameterSet_MANAGEDIDENTITY, ValueFromPipeline = true)]
         public string Url;
 
         [Parameter(Mandatory = false, ParameterSetName = ParameterSet_CREDENTIALS)]
@@ -98,7 +109,6 @@ namespace PnP.PowerShell.Commands.Base
 
         [Parameter(Mandatory = true, ParameterSetName = ParameterSet_SPOMANAGEMENT)]
         public SwitchParameter SPOManagementShell;
-
 
         [Parameter(Mandatory = true, ParameterSetName = ParameterSet_DEVICELOGIN)]
         [Alias("PnPManagementShell", "PnPO365ManagementShell")]
@@ -167,7 +177,7 @@ namespace PnP.PowerShell.Commands.Base
         [Obsolete("Set the environment variable 'PNPPOWERSHELL_UPDATECHECK' to 'false' instead of using this switch.")]
         public SwitchParameter NoVersionCheck;
 
-        [Parameter(Mandatory = false, ParameterSetName = ParameterSet_MANAGEDIDENTITY)]
+        [Parameter(Mandatory = true, ParameterSetName = ParameterSet_MANAGEDIDENTITY)]
         public SwitchParameter ManagedIdentity;
 
         [Parameter(Mandatory = false, ParameterSetName = ParameterSet_CREDENTIALS)]
@@ -202,8 +212,6 @@ namespace PnP.PowerShell.Commands.Base
             }
 #pragma warning restore CS6018
 
-
-
             VersionChecker.CheckVersion(this);
             try
             {
@@ -221,10 +229,14 @@ namespace PnP.PowerShell.Commands.Base
         /// </summary>
         protected void Connect(ref CancellationToken cancellationToken)
         {
-
-            if (!string.IsNullOrEmpty(Url) && Url.EndsWith("/"))
+            if (!string.IsNullOrEmpty(Url))
             {
                 Url = Url.TrimEnd('/');
+
+                if(!Url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) && !Url.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+                {
+                    Url = $"https://{Url}";
+                }
             }
 
             PnPConnection connection = null;
@@ -283,8 +295,8 @@ namespace PnP.PowerShell.Commands.Base
 #else
             WriteVerbose($"PnP PowerShell Cmdlets ({Assembly.GetExecutingAssembly().GetName().Version})");
 #endif
-            PnPConnection.Current = connection;
-            if (CreateDrive && PnPConnection.Current.Context != null)
+            
+            if (CreateDrive && connection.Context != null)
             {
                 var provider = SessionState.Provider.GetAll().FirstOrDefault(p => p.Name.Equals(SPOProvider.PSProviderName, StringComparison.InvariantCultureIgnoreCase));
                 if (provider != null)
@@ -299,9 +311,9 @@ namespace PnP.PowerShell.Commands.Base
                 }
             }
 
-            if (PnPConnection.Current.Url != null)
+            if (connection.Url != null)
             {
-                var hostUri = new Uri(PnPConnection.Current.Url);
+                var hostUri = new Uri(connection.Url);
                 Environment.SetEnvironmentVariable("PNPPSHOST", hostUri.Host);
                 Environment.SetEnvironmentVariable("PNPPSSITE", hostUri.LocalPath);
             }
@@ -311,11 +323,32 @@ namespace PnP.PowerShell.Commands.Base
                 Environment.SetEnvironmentVariable("PNPPSSITE", "GRAPH");
             }
 
+            if (ValidateConnection)
+            {
+                // Try requesting the site Id to validate that the site to which is being connected exists
+                WriteVerbose($"Validating if the site at {Url} exists");
+                connection.Context.Load(connection.Context.Site, p => p.Id);
+
+                try
+                {
+                    connection.Context.ExecuteQueryRetry();
+                    WriteVerbose($"Site at {Url} exists");
+                }
+                catch(System.Net.WebException e) when (e.Message.Contains("404"))
+                {
+                    WriteVerbose($"Site at {Url} does not exist");
+                    throw new PSInvalidOperationException($"The specified site {Url} does not exist", e);
+                }
+            }
+
             if (ReturnConnection)
             {
                 WriteObject(connection);
             }
-
+            else
+            {
+                PnPConnection.Current = connection;
+            }
         }
 
         #region Connect Types
@@ -522,8 +555,8 @@ namespace PnP.PowerShell.Commands.Base
 
         private PnPConnection ConnectManagedIdentity()
         {
-            WriteVerbose("Connecting to the Graph with the current Managed Identity");
-            return PnPConnection.CreateWithManagedIdentity(this, TenantAdminUrl);
+            WriteVerbose("Connecting using Managed Identity");
+            return PnPConnection.CreateWithManagedIdentity(this, Url, TenantAdminUrl);
         }
 
         private PnPConnection ConnectWebLogin()
@@ -545,7 +578,7 @@ namespace PnP.PowerShell.Commands.Base
             {
                 ClientId = PnPConnection.PnPManagementShellClientId;
             }
-            if (PnPConnection.Current?.ClientId == ClientId)
+            if (PnPConnection.Current?.ClientId == ClientId && PnPConnection.Current?.ConnectionMethod == ConnectionMethod.Credentials)
             {
                 if (IsSameOrAdminHost(new Uri(Url), new Uri(PnPConnection.Current.Url)))
                 {
@@ -637,8 +670,8 @@ namespace PnP.PowerShell.Commands.Base
 
         private void ReuseAuthenticationManager()
         {
-            var contextSettings = PnPConnection.Current.Context.GetContextSettings();
-            PnPConnection.CachedAuthenticationManager = contextSettings.AuthenticationManager;
+            var contextSettings = PnPConnection.Current.Context?.GetContextSettings();
+            PnPConnection.CachedAuthenticationManager = contextSettings?.AuthenticationManager;
         }
         #endregion
     }

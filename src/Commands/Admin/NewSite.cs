@@ -1,10 +1,8 @@
-﻿using System.Management.Automation;
+﻿using System;
+using System.Linq;
+using System.Management.Automation;
 using Microsoft.SharePoint.Client;
-
-using PnP.PowerShell.Commands.Base.PipeBinds;
 using PnP.PowerShell.Commands.Enums;
-using System;
-using PnP.PowerShell.Commands.Base;
 using PnP.PowerShell.Commands.Attributes;
 
 namespace PnP.PowerShell.Commands
@@ -30,26 +28,25 @@ namespace PnP.PowerShell.Commands
 
         [Parameter(Mandatory = false)]
         public SwitchParameter Wait;
+        
+        [Parameter(Mandatory = false)]
+        public Framework.Enums.TimeZone TimeZone;
 
         public object GetDynamicParameters()
         {
             switch (Type)
             {
                 case SiteType.CommunicationSite:
-                    {
-                        _communicationSiteParameters = new CommunicationSiteParameters();
-                        return _communicationSiteParameters;
-                    }
+                    _communicationSiteParameters = new CommunicationSiteParameters();
+                    return _communicationSiteParameters;
+
                 case SiteType.TeamSite:
-                    {
-                        _teamSiteParameters = new TeamSiteParameters();
-                        return _teamSiteParameters;
-                    }
+                    _teamSiteParameters = new TeamSiteParameters();
+                    return _teamSiteParameters;
+
                 case SiteType.TeamSiteWithoutMicrosoft365Group:
-                    {
-                        _teamSiteWithoutMicrosoft365GroupParameters = new TeamSiteWithoutMicrosoft365Group();
-                        return _teamSiteWithoutMicrosoft365GroupParameters;
-                    }
+                    _teamSiteWithoutMicrosoft365GroupParameters = new TeamSiteWithoutMicrosoft365Group();
+                    return _teamSiteWithoutMicrosoft365GroupParameters;
             }
             return null;
         }
@@ -58,6 +55,7 @@ namespace PnP.PowerShell.Commands
         {
             if (Type == SiteType.CommunicationSite)
             {
+                EnsureDynamicParameters(_communicationSiteParameters);
                 if (!ParameterSpecified("Lcid"))
                 {
                     ClientContext.Web.EnsureProperty(w => w.Language);
@@ -89,10 +87,23 @@ namespace PnP.PowerShell.Commands
                 creationInformation.SensitivityLabel = _communicationSiteParameters.SensitivityLabel;
 
                 var returnedContext = Framework.Sites.SiteCollection.Create(ClientContext, creationInformation, noWait: !Wait);
-                WriteObject(returnedContext.Url);
+                if (ParameterSpecified(nameof(TimeZone)))
+                {
+                    returnedContext.Web.EnsureProperties(w => w.RegionalSettings, w => w.RegionalSettings.TimeZones);
+                    returnedContext.Web.RegionalSettings.TimeZone = returnedContext.Web.RegionalSettings.TimeZones.Where(t => t.Id == ((int)TimeZone)).First();
+                    returnedContext.Web.RegionalSettings.Update();
+                    returnedContext.ExecuteQueryRetry();
+                    returnedContext.Site.EnsureProperty(s => s.Url);
+                    WriteObject(returnedContext.Site.Url);
+                }
+                else
+                {
+                    WriteObject(returnedContext.Url);
+                }
             }
             else if (Type == SiteType.TeamSite)
             {
+                EnsureDynamicParameters(_teamSiteParameters);
                 if (!ParameterSpecified("Lcid"))
                 {
                     ClientContext.Web.EnsureProperty(w => w.Language);
@@ -121,7 +132,19 @@ namespace PnP.PowerShell.Commands
                 if (ClientContext.GetContextSettings()?.Type != Framework.Utilities.Context.ClientContextType.SharePointACSAppOnly)
                 {
                     var returnedContext = Framework.Sites.SiteCollection.Create(ClientContext, creationInformation, noWait: !Wait, graphAccessToken: GraphAccessToken);
-                    WriteObject(returnedContext.Url);
+                    if (ParameterSpecified(nameof(TimeZone)))
+                    {
+                        returnedContext.Web.EnsureProperties(w => w.RegionalSettings, w => w.RegionalSettings.TimeZones);
+                        returnedContext.Web.RegionalSettings.TimeZone = returnedContext.Web.RegionalSettings.TimeZones.Where(t => t.Id == ((int)TimeZone)).First();
+                        returnedContext.Web.RegionalSettings.Update();
+                        returnedContext.ExecuteQueryRetry();
+                        returnedContext.Site.EnsureProperty(s => s.Url);
+                        WriteObject(returnedContext.Site.Url);
+                    }
+                    else
+                    {
+                        WriteObject(returnedContext.Url);
+                    }
                 }
                 else
                 {
@@ -130,6 +153,7 @@ namespace PnP.PowerShell.Commands
             }
             else
             {
+                EnsureDynamicParameters(_teamSiteWithoutMicrosoft365GroupParameters);
                 if (!ParameterSpecified("Lcid"))
                 {
                     ClientContext.Web.EnsureProperty(w => w.Language);
@@ -154,7 +178,27 @@ namespace PnP.PowerShell.Commands
                 creationInformation.SensitivityLabel = _teamSiteWithoutMicrosoft365GroupParameters.SensitivityLabel;
 
                 var returnedContext = Framework.Sites.SiteCollection.Create(ClientContext, creationInformation, noWait: !Wait);
-                WriteObject(returnedContext.Url);
+                if (ParameterSpecified(nameof(TimeZone)))
+                {
+                    returnedContext.Web.EnsureProperties(w => w.RegionalSettings, w => w.RegionalSettings.TimeZones);
+                    returnedContext.Web.RegionalSettings.TimeZone = returnedContext.Web.RegionalSettings.TimeZones.Where(t => t.Id == ((int)TimeZone)).First();
+                    returnedContext.Web.RegionalSettings.Update();
+                    returnedContext.ExecuteQueryRetry();
+                    returnedContext.Site.EnsureProperty(s => s.Url);
+                    WriteObject(returnedContext.Site.Url);
+                }
+                else
+                {
+                    WriteObject(returnedContext.Url);
+                }
+            }
+        }
+
+        private void EnsureDynamicParameters(object dynamicParameters)
+        {
+            if (dynamicParameters == null)
+            {
+                throw new PSArgumentException($"Please specify the parameter -{nameof(Type)} when invoking this cmdlet", nameof(Type));
             }
         }
 

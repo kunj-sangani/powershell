@@ -60,10 +60,10 @@ namespace PnP.PowerShell.Commands.Graph
 
         protected override void ExecuteCmdlet()
         {
-            var groupId = Team.GetGroupId(HttpClient, AccessToken);
+            var groupId = Team.GetGroupId(Connection, AccessToken);
             if (groupId != null)
             {
-                var channelId = Channel.GetId(HttpClient, AccessToken, groupId);
+                var channelId = Channel.GetId(Connection, AccessToken, groupId);
                 if (channelId != null)
                 {
                     try
@@ -80,6 +80,7 @@ namespace PnP.PowerShell.Commands.Graph
                             case TeamTabType.PowerPoint:
                             case TeamTabType.PDF:
                                 {
+                                    EnsureDynamicParameters(officeFileParameters);
                                     entityId = officeFileParameters.EntityId;
                                     contentUrl = officeFileParameters.ContentUrl;
                                     break;
@@ -87,11 +88,13 @@ namespace PnP.PowerShell.Commands.Graph
                             case TeamTabType.DocumentLibrary:
                             case TeamTabType.WebSite:
                                 {
+                                    EnsureDynamicParameters(documentLibraryParameters);
                                     contentUrl = documentLibraryParameters.ContentUrl;
                                     break;
                                 }
                             case TeamTabType.Custom:
                                 {
+                                    EnsureDynamicParameters(customParameters);
                                     entityId = customParameters.EntityId;
                                     contentUrl = customParameters.ContentUrl;
                                     removeUrl = customParameters.RemoveUrl;
@@ -100,7 +103,7 @@ namespace PnP.PowerShell.Commands.Graph
                                     break;
                                 }
                         }
-                        WriteObject(TeamsUtility.AddTabAsync(HttpClient, AccessToken, groupId, channelId, DisplayName, Type, teamsAppId, entityId, contentUrl, removeUrl, webSiteUrl).GetAwaiter().GetResult());
+                        WriteObject(TeamsUtility.AddTabAsync(Connection, AccessToken, groupId, channelId, DisplayName, Type, teamsAppId, entityId, contentUrl, removeUrl, webSiteUrl).GetAwaiter().GetResult());
                     }
                     catch (GraphException ex)
                     {
@@ -124,6 +127,14 @@ namespace PnP.PowerShell.Commands.Graph
                 throw new PSArgumentException("Group not found");
             }
 
+        }
+
+        private void EnsureDynamicParameters(object dynamicParameters)
+        {
+            if (dynamicParameters == null)
+            {
+                throw new PSArgumentException($"Please specify the parameter -{nameof(Type)} when invoking this cmdlet", nameof(Type));
+            }
         }
 
         public class OfficeFileParameters

@@ -4,6 +4,7 @@
 namespace PnP.PowerShell.Commands.Base
 {
     [Cmdlet(VerbsCommon.Remove, "PnPStoredCredential")]
+    [OutputType(typeof(void))]
     public class RemoveStoredCredential : PSCmdlet
     {
         [Parameter(Mandatory = true)]
@@ -17,7 +18,7 @@ namespace PnP.PowerShell.Commands.Base
             var cred = Utilities.CredentialManager.GetCredential(Name);
             if (cred != null)
             {
-                if (Force || ShouldContinue($"Remove credential {Name}?", "Confirm"))
+                if (Force || ShouldContinue($"Remove credential {Name}?", Properties.Resources.Confirm))
                 {
                     if (!Utilities.CredentialManager.RemoveCredential(Name))
                     {

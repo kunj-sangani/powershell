@@ -3,9 +3,7 @@ using System.Linq;
 using System.Management.Automation;
 using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
-
 using PnP.PowerShell.Commands.Base;
-using PnP.PowerShell.Commands.Enums;
 using System.Collections.Generic;
 using Microsoft.Online.SharePoint.TenantManagement;
 using PnP.PowerShell.Commands.Base.PipeBinds;
@@ -45,15 +43,24 @@ namespace PnP.PowerShell.Commands
             ClientContext.ExecuteQueryRetry();
             if (ParameterSpecified(nameof(Identity)))
             {
-                var siteProperties = Tenant.GetSitePropertiesByUrl(Identity.Url, Detailed);
-                ClientContext.Load(siteProperties);
-                ClientContext.ExecuteQueryRetry();
+                SiteProperties siteProperties;
+                if(Identity.Id.HasValue)
+                {
+                    siteProperties = Tenant.GetSitePropertiesById(Identity.Id.Value, Detailed);
+                    if(siteProperties == null) return;
+                }
+                else
+                {
+                    siteProperties = Tenant.GetSitePropertiesByUrl(Identity.Url, Detailed);
+                    ClientContext.Load(siteProperties);
+                    ClientContext.ExecuteQueryRetry();
+                }
                 Model.SPOSite site = null;
                 if (ParameterSpecified(nameof(DisableSharingForNonOwnersStatus)))
                 {
                     var office365Tenant = new Office365Tenant(ClientContext);
                     var clientResult = office365Tenant.IsSharingDisabledForNonOwnersOfSite(Identity.Url);
-                    ClientContext.ExecuteQuery();
+                    ClientContext.ExecuteQueryRetry();
                     site = new Model.SPOSite(siteProperties, clientResult.Value);
                 }
                 else
@@ -100,7 +107,7 @@ namespace PnP.PowerShell.Commands
 
                 if (Template != null)
                 {
-                    WriteObject(sites.Where(t => t.Template == Template).OrderBy(x => x.Url).Select(s => new Model.SPOSite(s, null)), true);
+                    WriteObject(sites.Where(t => t.Template.ToLower() == Template.ToLower()).OrderBy(x => x.Url).Select(s => new Model.SPOSite(s, null)), true);
                 }
                 else
                 {

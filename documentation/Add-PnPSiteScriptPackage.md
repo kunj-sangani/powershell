@@ -15,7 +15,7 @@ title: Add-PnPSiteScriptPackage
 
 * SharePoint: Access to the SharePoint Tenant Administration site
 
-Creates a new Site Script Package on the current tenant. Site script packages can contain files in addition to the site scripts which can be used to upload files to sites om which a site design gets applied.
+Creates a new Site Script Package on the current tenant. Site script packages can contain files in addition to the site scripts which can be used to upload files to sites on which a site template gets applied.
 
 ## SYNTAX
 
@@ -24,6 +24,8 @@ Add-PnPSiteScriptPackage -Title <String> [-Description <String>] -ContentPath <S
 ```
 
 ## DESCRIPTION
+
+Allows to add a new Site Script Package on the current tenant
 
 ## EXAMPLES
 
@@ -50,7 +52,7 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -ConContentPathtent
+### -ContentPath
 The full path to the locally stored Site Script Package to upload
 
 ```yaml

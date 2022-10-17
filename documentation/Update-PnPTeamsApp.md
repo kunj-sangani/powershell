@@ -25,6 +25,8 @@ Update-PnPTeamsApp -Identity <TeamsAppPipeBind> -Path <String>  [<CommonParamete
 
 ## DESCRIPTION
 
+Allows to update an existing app in the Teams App Catalog.
+
 ## EXAMPLES
 
 ### EXAMPLE 1
@@ -37,6 +39,7 @@ Updates the specified app in the teams app catalog with the contents of the refe
 ## PARAMETERS
 
 ### -Identity
+Specify the name, id or external id of the app.
 
 ```yaml
 Type: TeamsAppPipeBind

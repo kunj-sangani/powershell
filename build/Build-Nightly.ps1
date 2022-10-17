@@ -115,7 +115,7 @@ if ($runPublish -eq $true) {
 		Get-ChildItem -Path "$PSScriptRoot/../src/ALC/bin/Release/netstandard2.0" | Where-Object { $_.Extension -in '.dll', '.pdb' } | Foreach-Object { if (!$assemblyExceptions.Contains($_.Name)) { [void]$commonFiles.Add($_.Name) }; Copy-Item -LiteralPath $_.FullName -Destination $commonPath }
 		Get-ChildItem -Path "$PSScriptRoot/../src/Commands/bin/Release/netcoreapp3.1" | Where-Object { $_.Extension -in '.dll', '.pdb' -and -not $commonFiles.Contains($_.Name) } | Foreach-Object { Copy-Item -LiteralPath $_.FullName -Destination $corePath }
 		if (!$IsLinux -and !$IsMacOs) {
-			Get-ChildItem -Path "$PSScriptRoot/../src/Commands/bin/Release/net461" | Where-Object { $_.Extension -in '.dll', '.pdb' -and -not $commonFiles.Contains($_.Name) } | Foreach-Object { Copy-Item -LiteralPath $_.FullName -Destination $frameworkPath }
+			Get-ChildItem -Path "$PSScriptRoot/../src/Commands/bin/Release/net462" | Where-Object { $_.Extension -in '.dll', '.pdb' -and -not $commonFiles.Contains($_.Name) } | Foreach-Object { Copy-Item -LiteralPath $_.FullName -Destination $frameworkPath }
 		}
 	}
 	Catch {
@@ -171,7 +171,7 @@ if ($runPublish -eq $true) {
 	CompanyName = 'Microsoft 365 Patterns and Practices'
 	CompatiblePSEditions = @(`"Core`",`"Desktop`")
 	PowerShellVersion = '5.1'
-	DotNetFrameworkVersion = '4.6.1'
+	DotNetFrameworkVersion = '4.6.2'
 	ProcessorArchitecture = 'None'
 	FunctionsToExport = '*'  
 	CmdletsToExport = @($cmdletsString)
@@ -194,6 +194,9 @@ if ($runPublish -eq $true) {
 		Write-Error "Error: Cannot generate PnP.PowerShell.psd1. Maybe a PowerShell session is still using the module?"
 		exit 1
 	}
+
+	# Generate predictor commands
+	./build/Generate-PredictorCommands.ps1 -Version $version
 
 	Write-Host "Generating Documentation" -ForegroundColor Yellow
 	Set-PSRepository PSGallery -InstallationPolicy Trusted

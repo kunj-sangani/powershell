@@ -7,7 +7,7 @@ external help file: PnP.PowerShell.dll-Help.xml
 online version: https://pnp.github.io/powershell/cmdlets/Set-PnPSiteScriptPackage.html
 ---
  
-# Set-PnPSiteScript
+# Set-PnPSiteScriptPackage
 
 ## SYNOPSIS
 
@@ -26,6 +26,8 @@ Set-PnPSiteScriptPackage -Identity <TenantSiteScriptPipeBind> [-Title <String>] 
 
 ## DESCRIPTION
 
+Allows to update an existing Site Script Package on the current tenant.
+
 ## EXAMPLES
 
 ### EXAMPLE 1
@@ -33,15 +35,8 @@ Set-PnPSiteScriptPackage -Identity <TenantSiteScriptPipeBind> [-Title <String>] 
 Set-PnPSiteScriptPackage -Identity f1d55d9b-b116-4f54-bc00-164a51e7e47f -Title "My Site Script"
 ```
 
-Updates an existing Site Script PAckage and changes the title.
-
-### EXAMPLE 2
-```powershell
-$script = Get-PnPSiteScriptPackage -Identity f1d55d9b-b116-4f54-bc00-164a51e7e47f 
-Set-PnPSiteScriptPackage -Identity $script -Title "My Site Script"
-```
-
 Updates an existing Site Script Package and changes the title.
+
 
 ## PARAMETERS
 
